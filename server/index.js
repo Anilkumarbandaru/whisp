@@ -4,6 +4,7 @@ import cors from 'cors'
 import cookieParser from "cookie-parser"
 import mongoose from "mongoose"
 import authRoutes from "./routes/AuthRoutes.js"
+import path from 'path';
 
 dotenv.config();
 
@@ -17,6 +18,8 @@ app.use(cors({
     credentials: true
 }));
 
+
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use(cookieParser());
 app.use(express.json());
  
