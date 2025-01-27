@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { MdFolderZip } from "react-icons/md";
 import { IoMdArrowRoundDown } from "react-icons/io";
 import { IoCloseSharp } from "react-icons/io5";
+import { LucidePanelTopDashed } from "lucide-react";
 
 const MessageContainer = () => {
   const scrollRef = useRef();
@@ -15,6 +16,8 @@ const MessageContainer = () => {
     userInfo,
     selectedChatMessages,
     setSelectedChatMessages,
+    setFileDownloadProgress,
+    setIsDownloading,
   } = useAppStore();
 
   const [showImage, setShowImage] = useState(false);
@@ -76,7 +79,16 @@ const MessageContainer = () => {
   };
 
   const downloadFile =  async (url) => {
-    const response = await apiClient.get(`${HOST}/${url}`, {responseType: "blob"});
+    setIsDownloading(true);
+    setFileDownloadProgress(0);
+    const response = await apiClient.get(`${HOST}/${url}`, {
+      responseType: "blob",
+      onDownloadProgress: (progressEvent) => {
+        const { loaded, total } = progressEvent;
+        const percentCompleted = Math.round((loaded * 100 ) / total);
+        setFileDownloadProgress(percentCompleted)
+      }
+    });
     const urlBlob = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement("a")
     link.href = urlBlob;
@@ -84,7 +96,9 @@ const MessageContainer = () => {
     document.body.appendChild(link)
     link.click();
     link.remove();
-    window.URL.revokeObjectURL(urlBlob)
+    window.URL.revokeObjectURL(urlBlob);
+    setIsDownloading(false);
+    setFileDownloadProgress(0)
   }
 
   const renderDMMessages = (message) => (
