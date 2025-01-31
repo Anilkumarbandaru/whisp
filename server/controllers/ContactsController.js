@@ -68,14 +68,14 @@ export const getContactsForDMList = async (request, response, next) => {
         },
       },
       {
-        $unwind: "$contactInfo", // Fixed: Added '$' prefix
+        $unwind: "$contactInfo", 
       },
       {
         $project: {
           _id: 1,
           lastMessageTime: 1,
           email: "$contactInfo.email",
-          firstName: "$contactInfo.firstName", // Fixed: Changed fileName to firstName
+          firstName: "$contactInfo.firstName", 
           lastName: "$contactInfo.lastName",
           image: "$contactInfo.image",
           color: "$contactInfo.color",
@@ -89,6 +89,32 @@ export const getContactsForDMList = async (request, response, next) => {
     return response.status(200).json({ contacts });
   } catch (error) {
     console.log({ error });
-    return response.status(500).json({ message: "Internal Server Error", error: error.message }); // Added error message for debugging
+    return response
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message }); 
+  }
+};
+
+export const getAllContacts = async (request, response, next) => {
+  try {
+    // Fetch all users except the one making the request
+    const users = await User.find(
+      { _id: { $ne: request.userId } },
+      "firstName lastName _id email"
+    );
+
+    // Map users to the desired format
+    const contacts = users.map((user) => ({
+      label: user.firstName ? `${user.firstName} ${user.lastName}` : user.email,
+      value: user._id, // Include the user ID or other fields as needed
+    }));
+
+    console.log(contacts); // Log the contacts for debugging
+
+    // Return the contacts as a JSON response
+    return response.status(200).json({ contacts });
+  } catch (error) {
+    console.log({ error }); // Log the error for debugging
+    return response.status(500).send("Internal Server Error");
   }
 };
