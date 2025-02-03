@@ -14,45 +14,60 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import Lottie from "react-lottie";
-import { animationDefaultOptions, getColor } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
-import { GET_ALL_CONTACTS_ROUTE, HOST, SEARCH_CONTACTS_ROUTES } from "@/utils/constants";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import {
+  CREATE_CHANNEL_ROUTE,
+  GET_ALL_CONTACTS_ROUTE,
+} from "@/utils/constants";
 import { useAppStore } from "@/store";
 import { Button } from "@/components/ui/button";
 import MultipleSelector from "@/components/ui/multipleselect";
 
 const CreateChannel = () => {
-  const { setSelectedChatType, setSelectedChatData } = useAppStore();
+  const { setSelectedChatType, setSelectedChatData, addChannel } =
+    useAppStore();
   const [newChannelModal, setNewChannelModal] = useState(false);
-  const [searchedContacts, setSearchedContacts] = useState([]);
   const [allContacts, setAllContacts] = useState([]);
-  const [selectedContacts, setSelectedContacts] = useState([])
-  const [channelName, setChannelName] = useState("")
+  const [selectedContacts, setSelectedContacts] = useState([]);
+  const [channelName, setChannelName] = useState("");
 
-  console.log("Selected Contacts",selectedContacts);
+  console.log("Selected Contacts", selectedContacts);
   console.log("allContacts", allContacts);
 
   useEffect(() => {
     const getData = async () => {
-        const response = await apiClient.get(GET_ALL_CONTACTS_ROUTE, {
-            withCredentials: true
-        })
-        setAllContacts(response.data.contacts)
-        console.log(response);
-        
-    }
+      const response = await apiClient.get(GET_ALL_CONTACTS_ROUTE, {
+        withCredentials: true,
+      });
+      setAllContacts(response.data.contacts);
+      console.log(response);
+    };
     getData();
-    
-    
-  },[])
-
+  }, []);
 
   const createChannel = async () => {
-    
-  }
+    try {
+      if (channelName.length > 0 && selectedContacts.length > 0) {
+        const members = selectedContacts ? selectedContacts.map((contact) => contact.value) : [];
+        const response = await apiClient.post(
+          CREATE_CHANNEL_ROUTE,
+          {
+            name: channelName,
+            members: members,
+          },
+          { withCredentials: true }
+        );
+        if (response.status === 201) {
+          setChannelName("");
+          setSelectedContacts([]);
+          setNewChannelModal(false);
+          addChannel(response.data.channel);
+        }
+      }
+    } catch (error) {
+      console.log({ error });
+    }
+  };
 
   return (
     <>
@@ -72,7 +87,9 @@ const CreateChannel = () => {
       <Dialog open={newChannelModal} onOpenChange={setNewChannelModal}>
         <DialogContent className="bg-[#181920] border-none text-white w-[400px] h-[400px] flex flex-col ">
           <DialogHeader>
-            <DialogTitle>Please fill up the details for new channel</DialogTitle>
+            <DialogTitle>
+              Please fill up the details for new channel
+            </DialogTitle>
             <DialogDescription></DialogDescription>
           </DialogHeader>
           <div>
@@ -84,20 +101,25 @@ const CreateChannel = () => {
             />
           </div>
           <div>
-            <MultipleSelector 
-            className= "rounded-lg bg-[#2c2e3b] border-none py-2 text-white"
-            defaultOptions={allContacts}
-            placeholder="Search Contacts"
-            value={selectedContacts}
-            onChange={setSelectedContacts}
-            emptyIndicator={
-                <p className="text-center text-lg leading-10 text-gray-600">No results found</p>
-            }
+            <MultipleSelector
+              className="rounded-lg bg-[#2c2e3b] border-none py-2 text-white"
+              defaultOptions={allContacts}
+              placeholder="Search Contacts"
+              value={selectedContacts}
+              onChange={setSelectedContacts}
+              emptyIndicator={
+                <p className="text-center text-lg leading-10 text-gray-600">
+                  No results found
+                </p>
+              }
             />
           </div>
-          <Button className="w-full bg-purple-700 hover:bg-purple-900 transition-all duration-300"
-          onClick={createChannel}
-          >Create Channel</Button>
+          <Button
+            className="w-full bg-purple-700 hover:bg-purple-900 transition-all duration-300"
+            onClick={createChannel}
+          >
+            Create Channel
+          </Button>
         </DialogContent>
       </Dialog>
     </>

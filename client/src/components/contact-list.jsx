@@ -46,7 +46,7 @@ const ContactList = ({ contacts, isChannel = false }) => {
                   <div
                     className={`
                         ${
-                          selectedChatData &&
+                          selectedChatData &&   
                           selectedChatData._id === contact._id
                             ? "bg-[#ffffff22] border border-white/70"
                             : getColor(contact.color)
