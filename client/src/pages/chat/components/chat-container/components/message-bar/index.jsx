@@ -1,6 +1,6 @@
 import { useSocket } from "@/context/SocketContext";
 import { apiClient } from "@/lib/api-client";
-import { useAppStore } from "@/store"; 
+import { useAppStore } from "@/store";
 import { UPLOAD_FILE_ROUTE } from "@/utils/constants";
 import EmojiPicker from "emoji-picker-react";
 import React, { useEffect, useRef, useState } from "react";
@@ -15,8 +15,13 @@ const MessageBar = () => {
   const [message, setMessage] = useState("");
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
-  
-  const { selectedChatType, selectedChatData, userInfo, setIsUploading, setFileUploadProgress } = useAppStore(); 
+  const {
+    selectedChatType,
+    selectedChatData,
+    userInfo,
+    setIsUploading,
+    setFileUploadProgress,
+  } = useAppStore();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -48,7 +53,16 @@ const MessageBar = () => {
         messageType: "text",
         fileUrl: undefined,
       });
+    } else if (selectedChatType === "channel") {
+      socket.emit("send-channel-message", {
+        sender: userInfo.id,
+        content: message,
+        messageType: "text",
+        fileUrl: undefined,
+        channelId: selectedChatData._id,
+      });
     }
+    setMessage("")
   };
 
   const handleAttachmentClick = () => {
@@ -66,13 +80,13 @@ const MessageBar = () => {
         setIsUploading(true);
         const response = await apiClient.post(UPLOAD_FILE_ROUTE, formData, {
           withCredentials: true,
-          onUploadProgress: data => {
+          onUploadProgress: (data) => {
             setFileUploadProgress(Math.round((100 * data.loaded) / data.total));
-          }
+          },
         });
 
         if (response.status === 200 && response.data) {
-            setIsUploading(false)
+          setIsUploading(false);
           if (selectedChatType === "contact") {
             socket.emit("sendMessage", {
               sender: userInfo.id,
@@ -81,13 +95,21 @@ const MessageBar = () => {
               messageType: "file",
               fileUrl: response.data.filePath,
             });
+          } else if (selectedChatType === "channel") {
+            socket.emit("send-channel-message", {
+              sender: userInfo.id,
+              content: message,
+              messageType: "file",
+              fileUrl: response.data.filePath,
+              channelId: selectedChatData._id,
+            });
           }
         }
       }
 
       console.log({ file });
     } catch (error) {
-        setIsUploading(false)
+      setIsUploading(false);
       console.log({ error });
     }
   };
